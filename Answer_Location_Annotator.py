@@ -1,20 +1,20 @@
 import json
 import sys
-
+import os
 import fitz  # PyMuPDF
-from PyQt5.QtCore import Qt, QPointF, QRectF
-from PyQt5.QtGui import QPixmap, QImage, QPolygonF, QPen, QBrush
+from PyQt5.QtCore import Qt, QPointF, QRectF, QSize
+from PyQt5.QtGui import QPixmap, QImage, QPolygonF, QPen, QBrush, QIcon
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QGraphicsView, QGraphicsScene,
-    QInputDialog, QGraphicsPolygonItem, QGraphicsTextItem
+    QInputDialog, QGraphicsPolygonItem, QGraphicsTextItem, QHBoxLayout, QLabel, QSizePolicy
 )
+import qdarktheme
 
 
 class AnnotationApp(QMainWindow):
-    # noinspection PyUnresolvedReferences
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("PDF Annotation Tool")
+        self.setWindowTitle("MarkIT Annotation Tool")
         self.setGeometry(100, 100, 1200, 900)
         self.current_page = 0
         self.pdf_document = None
@@ -28,44 +28,123 @@ class AnnotationApp(QMainWindow):
         self.point_items = []
         self.text_items = {}
 
-        self.layout = QVBoxLayout()
+        # Set up the layout and scene
+        self.layout = QHBoxLayout()  # Horizontal layout for main window
+
+        # Main widget for the PDF viewer
+        self.main_widget = QWidget()
+        self.main_layout = QVBoxLayout()
+
+        self.title_label = QLabel("MarkIT Annotation Tool")
+        self.title_label.setAlignment(Qt.AlignCenter)  # Center the title
+        self.title_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #AAAAAA; margin-bottom: 20px;")
+        self.main_layout.addWidget(self.title_label)
+
         self.graphics_view = QGraphicsView()
         self.scene = QGraphicsScene()
-
         self.graphics_view.setScene(self.scene)
 
-        # Existing buttons
+        self.main_layout.addWidget(self.graphics_view)
+        self.main_widget.setLayout(self.main_layout)
+        # Right side vertical button layout
+        self.right_layout = QVBoxLayout()
+        self.right_layout.setSpacing(15)  # Increased spacing between buttons for more room
+        self.right_layout.setContentsMargins(10, 10, 10, 10)  # Add margins around the layout
+
+        # Add company logo to the top right corner
+        self.logo_label = QLabel()
+        logo_path = os.path.join('resources', 'images', 'company_logo.png')  # Path to your logo
+        pixmap = QPixmap(logo_path)
+        self.logo_label.setPixmap(pixmap.scaled(150, 100, 1))  # Resize the logo to fit
+        self.logo_label.setAlignment(Qt.AlignTop)  # Align to the top-right
+        self.right_layout.addWidget(self.logo_label)  # Top-aligned logo
+
+
+        # Existing buttons with fixed size
         self.load_pdf_button = QPushButton("Load PDF")
         self.load_pdf_button.clicked.connect(self.load_pdf)
+        self.load_pdf_button.setFixedWidth(150)  # Fix the width for consistency
+        self.load_pdf_button.setFixedHeight(40)  # Set fixed height for consistency
 
-        # New button for loading annotations
         self.load_annotations_button = QPushButton("Load Annotations")
         self.load_annotations_button.clicked.connect(self.load_annotations)
-
-        # Other buttons (commit, next page, save)
-        self.commit_button = QPushButton("Commit Bounding Box")
-        self.commit_button.clicked.connect(self.commit_bounding_box)
-
-        self.next_page_button = QPushButton("Next Page")
-        self.next_page_button.clicked.connect(self.next_page)
+        self.load_annotations_button.setFixedWidth(150)
+        self.load_annotations_button.setFixedHeight(40)
 
         self.save_annotations_button = QPushButton("Save Annotations")
         self.save_annotations_button.clicked.connect(self.save_annotations)
+        self.save_annotations_button.setFixedWidth(150)
+        self.save_annotations_button.setFixedHeight(40)
 
-        self.previous_page_button = QPushButton("Previous Page")
+        # Arrow buttons for page navigation (placed side by side) with fixed size
+        self.arrow_layout = QHBoxLayout()  # Horizontal layout for arrow buttons
+
+        self.previous_page_button = QPushButton()
+        prev_arrow_path = os.path.join('resources', 'images', 'left_arrow_icon.png')  # Path to left arrow icon
+        self.previous_page_button.setIcon(QIcon(prev_arrow_path))
+        self.previous_page_button.setIconSize(QSize(20, 20))  # Adjust icon size for better fit
+        self.previous_page_button.setFixedSize(40, 40)  # Set fixed button size
         self.previous_page_button.clicked.connect(self.previous_page)
 
-        # Add buttons to layout
-        self.layout.addWidget(self.graphics_view)
-        self.layout.addWidget(self.load_pdf_button)
-        self.layout.addWidget(self.load_annotations_button)  # Add new button here
-        self.layout.addWidget(self.next_page_button)
-        self.layout.addWidget(self.previous_page_button)  # Add this line to include the button in the layout
-        self.layout.addWidget(self.save_annotations_button)
+        self.next_page_button = QPushButton()
+        next_arrow_path = os.path.join('resources', 'images', 'right_arrow_icon.png')  # Path to right arrow icon
+        self.next_page_button.setIcon(QIcon(next_arrow_path))
+        self.next_page_button.setIconSize(QSize(20, 20))  # Adjust icon size for better fit
+        self.next_page_button.setFixedSize(40, 40)  # Set fixed button size
+        self.next_page_button.clicked.connect(self.next_page)
+
+        # Add the arrow buttons to the horizontal layout
+        self.arrow_layout.addWidget(self.previous_page_button)
+        self.arrow_layout.addWidget(self.next_page_button)
+
+        # Add the other buttons to the right layout with spacing
+        self.right_layout.addWidget(self.load_pdf_button)
+        self.right_layout.addWidget(self.load_annotations_button)
+        self.right_layout.addLayout(self.arrow_layout)  # Add arrow buttons layout
+        self.right_layout.addWidget(self.save_annotations_button)
+
+        # Add stretch to push the powered by label down
+        self.right_layout.addStretch(1)
+
+        # Add the "Powered by NCAI" text at the bottom right with fixed size
+        self.powered_by_label = QLabel("Powered by NCAI")
+        self.powered_by_label.setAlignment(Qt.AlignBottom)
+        self.right_layout.addWidget(self.powered_by_label)
+
+
+        # Create a container widget for the button layout
+        self.right_widget = QWidget()
+        self.right_widget.setLayout(self.right_layout)
+
+        # Add the graphics view and right sidebar to the main horizontal layout
+        self.layout.addWidget(self.main_widget)
+        self.layout.addWidget(self.right_widget)
 
         container = QWidget()
         container.setLayout(self.layout)
         self.setCentralWidget(container)
+
+        # Apply some styling to the buttons for better appearance
+        self.setStyleSheet("""
+            QPushButton {
+                font-size: 14px;
+                padding: 10px;
+                border-radius: 5px;
+                background-color: #007BFF; 
+                color: black;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;  
+            }
+            QPushButton:pressed {
+                background-color: #004085;
+            }
+            QLabel {
+                font-size: 12px;
+                color: #888888;
+            }
+        """)
 
     def load_annotations(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Open Annotations File", "", "JSON Files (*.json)")
@@ -221,26 +300,25 @@ class AnnotationApp(QMainWindow):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton and self.graphics_view.underMouse():
-            # Get the scene position based on the mouse event
-            pos = self.graphics_view.mapToScene(event.pos())
+            # Map the view coordinates to the scene coordinates
+            scene_pos = self.graphics_view.mapToScene(event.pos())
 
-            # Get the current scale factor from the view's transformation
+            # Define adjustable offsets
+            x_offset = getattr(self, "x_offset", -20)  # Default to 0 if not set
+            y_offset = getattr(self, "y_offset", -78)  # Default to 0 if not set
+
+            # Adjust for zoom factor
             scale_factor = self.graphics_view.transform().m11()  # Assumes uniform scaling
-
-            # Adjust the cursor size based on the scale
-            cursor_size = 20  # Base cursor size
-            adjusted_cursor_size = cursor_size / scale_factor  # Scale cursor size with zoom level
-
-            # Adjust click position based on scaled cursor size
-            pos_adjusted = QPointF(pos.x() - adjusted_cursor_size / 2, pos.y() - adjusted_cursor_size / 2)
+            adjusted_pos = QPointF(scene_pos.x() + x_offset / scale_factor,
+                                   scene_pos.y() + y_offset / scale_factor)
 
             if len(self.points) < 2:
-                self.points.append(pos_adjusted)  # Add point to list
+                self.points.append(adjusted_pos)  # Add the adjusted position
 
                 # Draw point as a red circle
                 point_item = self.scene.addEllipse(
-                    pos_adjusted.x() - 3 / scale_factor,  # Adjust circle size for zoom
-                    pos_adjusted.y() - 3 / scale_factor,
+                    adjusted_pos.x() - 3 / scale_factor,  # Adjust size for zoom
+                    adjusted_pos.y() - 3 / scale_factor,
                     6 / scale_factor,
                     6 / scale_factor,
                     QPen(Qt.red),
@@ -249,22 +327,29 @@ class AnnotationApp(QMainWindow):
                 self.point_items.append(point_item)  # Store the point item
 
                 if len(self.points) == 2:
-                    self.update_bounding_box()  # Draw bounding box once 4 points are added
+                    self.update_bounding_box()  # Draw bounding box once 2 points are added
                     self.commit_bounding_box()
 
                 self.graphics_view.viewport().update()
-
-            else:
-                self.select_point(event)
 
         elif event.button() == Qt.RightButton:
             self.delete_bounding_box(event.pos())
 
     def delete_bounding_box(self, position):
+        # Map the view position to the scene position
         pos = self.graphics_view.mapToScene(position)
+
+        # Adjust for zoom factor and offset
+        scale_factor = self.graphics_view.transform().m11()  # Assumes uniform scaling
+        x_offset = getattr(self, "x_offset", -20)  # Default to 0 if not set
+        y_offset = getattr(self, "y_offset", -78)  # Default to 0 if not set
+        adjusted_pos = QPointF(pos.x() + x_offset / scale_factor,
+                               pos.y() + y_offset / scale_factor)
+
+        # Loop through the bounding boxes to check if the click position is inside any of them
         for box in self.bounding_boxes:
-            if box.contains(pos):
-                #
+            if box.contains(adjusted_pos):
+                # Remove the bounding box from the scene and the list
                 self.scene.removeItem(box)
                 self.bounding_boxes.remove(box)
 
@@ -349,7 +434,10 @@ class AnnotationApp(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    qdarktheme.enable_hi_dpi()
+    app = QApplication(sys.argv + ['-platform', 'windows:darkmode=1'])
+    qdarktheme.setup_theme()
+
     window = AnnotationApp()
     window.show()
     sys.exit(app.exec_())
