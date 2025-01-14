@@ -199,6 +199,12 @@ class AnnotationApp(QMainWindow):
         self.graphics_view.setCursor(Qt.CrossCursor)
         super().enterEvent(event)
 
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_A:  # "A" key for previous page
+            self.previous_page()
+        elif e.key() == Qt.Key_D:  # "D" key for next page
+            self.next_page()
+
     def load_pdf(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Open PDF File", "", "PDF Files (*.pdf)")
         if file_name:
