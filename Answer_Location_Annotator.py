@@ -219,20 +219,22 @@ class AnnotationApp(QMainWindow):
     def load_page(self):
         if self.pdf_document:
             page = self.pdf_document.load_page(self.current_page)
-            zoom_x = 2.0  # Increase for higher horizontal resolution
-            zoom_y = 2.0  # Increase for higher vertical resolution
+            zoom_x = 2.0
+            zoom_y = 2.0
             matrix = fitz.Matrix(zoom_x, zoom_y) * fitz.Matrix(self.zoom_factor, self.zoom_factor)
             pix = page.get_pixmap(matrix=matrix)
             qt_image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
 
             pixmap = QPixmap.fromImage(qt_image)
-
-            # Resize the pixmap to a fixed size (2160, 1440) without changing the actual image
             pixmap = pixmap.scaled(1440, 2160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
             self.scene.clear()  # Clear previous items
             self.scene.addPixmap(pixmap)  # Add the new page image
             self.graphics_view.setScene(self.scene)  # Set the scene in the graphics view
+
+            # Clear previous annotations and bounding boxes
+            self.bounding_boxes.clear()
+            self.text_items.clear()  # Clear text items as well
 
             self.points = []  # Clear points for new bounding box
             self.temp_lines = []  # Clear temporary lines
