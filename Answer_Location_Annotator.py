@@ -3,9 +3,9 @@ import sys
 import os
 import fitz  # PyMuPDF
 from PyQt5.QtCore import Qt, QPointF, QRectF, QSize
-from PyQt5.QtGui import QPixmap, QImage, QPolygonF, QPen, QBrush, QIcon
+from PyQt5.QtGui import QPixmap, QImage, QPolygonF, QPen, QBrush, QIcon, QFont, QColor
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QGraphicsView, QGraphicsScene,
+    QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGraphicsRectItem,
     QInputDialog, QGraphicsPolygonItem, QGraphicsTextItem, QHBoxLayout, QLabel, QSizePolicy
 )
 import qdarktheme
@@ -181,16 +181,19 @@ class AnnotationApp(QMainWindow):
                 ])
 
                 bounding_box = QGraphicsPolygonItem(rect_points)
-                bounding_box.setBrush(Qt.transparent)
-                bounding_box.setPen(Qt.red)
+                bounding_box.setBrush(QColor(255, 0, 0, 50))  # Semi-transparent red fill for better visibility
+                bounding_box.setPen(QPen(QColor(255, 0, 0), 3))  # Thicker red border
+
+                # Add the bounding box to the scene
                 self.scene.addItem(bounding_box)
                 self.bounding_boxes.append(bounding_box)
 
                 # Create text annotation
                 label_item = QGraphicsTextItem(text)
+                label_item.setFont(QFont("Arial", 13, QFont.Bold))  # Set a larger, bold font
                 label_item.setPos(x + width / 2 - label_item.boundingRect().width() / 2,
                                   y + height / 2 - label_item.boundingRect().height() / 2)
-                label_item.setDefaultTextColor(Qt.red)
+                label_item.setDefaultTextColor(Qt.blue)
                 # Store the mapping of bounding box to text item
                 self.text_items[bounding_box] = label_item
                 self.scene.addItem(label_item)
@@ -249,8 +252,9 @@ class AnnotationApp(QMainWindow):
 
             # Create a QGraphicsPolygonItem for the bounding box
             bounding_box = QGraphicsPolygonItem(rect_points)
-            bounding_box.setBrush(Qt.transparent)
-            bounding_box.setPen(Qt.red)
+            bounding_box.setBrush(QColor(255, 0, 0, 50))  # Semi-transparent red fill for better visibility
+            bounding_box.setPen(QPen(QColor(255, 0, 0), 3))  # Thicker red border
+
             self.scene.addItem(bounding_box)
 
             # Store bounding box in the list
@@ -274,10 +278,14 @@ class AnnotationApp(QMainWindow):
 
                 # Create the text annotation inside the bounding box
                 label_item = QGraphicsTextItem(label)
+                label_item.setFont(QFont("Arial", 13, QFont.Bold))  # Set a larger, bold font
                 label_item.setPos(x1 + width / 2 - label_item.boundingRect().width() / 2,
                                   y1 + height / 2 - label_item.boundingRect().height() / 2)
-                label_item.setDefaultTextColor(Qt.red)  # Set text color to red for visibility
+                label_item.setDefaultTextColor(Qt.blue)  # Set text color to white for better contrast
+
                 self.scene.addItem(label_item)
+
+                # Store the text item
                 self.text_items[bounding_box] = label_item
             else:
                 # If the user cancels the prompt, remove the bounding box
