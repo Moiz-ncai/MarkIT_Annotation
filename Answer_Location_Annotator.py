@@ -15,6 +15,8 @@ class AnnotationApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("MarkIT Annotation Tool")
+        # logo_path = os.path.join('resources', 'images', 'markIT_logo.png')
+        self.setWindowIcon(QIcon(os.path.join('resources', 'images', 'markIT_logo.png')))
         self.setGeometry(100, 100, 1200, 900)
         self.current_page = 0
         self.pdf_document = None
@@ -53,12 +55,11 @@ class AnnotationApp(QMainWindow):
 
         # Add company logo to the top right corner
         self.logo_label = QLabel()
-        logo_path = os.path.join('resources', 'images', 'company_logo.png')  # Path to your logo
+        logo_path = os.path.join('resources', 'images', 'markIT_logo.png')  # Path to your logo
         pixmap = QPixmap(logo_path)
         self.logo_label.setPixmap(pixmap.scaled(150, 100, 1))  # Resize the logo to fit
-        self.logo_label.setAlignment(Qt.AlignTop)  # Align to the top-right
+        self.logo_label.setAlignment(Qt.AlignBottom)  # Align to the top-right
         self.right_layout.addWidget(self.logo_label)  # Top-aligned logo
-
 
         # Existing buttons with fixed size
         self.load_pdf_button = QPushButton("Load PDF")
@@ -106,11 +107,16 @@ class AnnotationApp(QMainWindow):
         # Add stretch to push the powered by label down
         self.right_layout.addStretch(1)
 
-        # Add the "Powered by NCAI" text at the bottom right with fixed size
+        self.logo_label = QLabel()
+        logo_path = os.path.join('resources', 'images', 'company_logo.png')  # Path to your logo
+        pixmap = QPixmap(logo_path)
+        self.logo_label.setPixmap(pixmap.scaled(150, 100, 1))  # Resize the logo to fit
+        self.logo_label.setAlignment(Qt.AlignBottom)  # Align to the top-right
+        self.right_layout.addWidget(self.logo_label)  # Top-aligned logo
+
         self.powered_by_label = QLabel("Powered by NCAI")
         self.powered_by_label.setAlignment(Qt.AlignBottom)
         self.right_layout.addWidget(self.powered_by_label)
-
 
         # Create a container widget for the button layout
         self.right_widget = QWidget()
