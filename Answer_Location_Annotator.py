@@ -15,7 +15,7 @@ class AnnotationApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("MarkIT Annotation Tool")
-        self.setWindowIcon(QIcon(os.path.join('resources', 'images', 'markIT_logo.png')))
+        self.setWindowIcon(QIcon(os.path.join('resources', 'images', 'markIT_icon.png')))
         self.setGeometry(100, 100, 1200, 900)
         self.current_page = 0
         self.pdf_document = None
